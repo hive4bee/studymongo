@@ -1,0 +1,149 @@
+use DATABASE_NAME
+생성되어 있는 DB라면 해당 DB를 사용한다.
+존재하지 않는 DB라면 새로운 DB를 생성하고 사용한다
+
+db
+현재 사용중인 데이터베이스를 확인
+
+show dbs
+내가 만든 데이터베이스 리스트들을 확인
+
+db.COLLECTION_NAME.insert({"key1":"val1", ..., "keyN":"valN"})
+현재 사용중인 데이터베이스에 묵시적으로 컬렉션을 만들고 삽입한다.
+
+
+db.dropDatabase()
+제거하고자 하는 DB로 집입하고나서 명령어를 입력하면 삭제된다.
+
+db.createCollection("COLLECTION_NAME", OPTIONS)
+db.createCollection("People", {
+  ... capped: false,
+  ... max : 10000 })
+명시적으로 Collection을 생성하는 방법이다. 
+
+show collections
+만들어진 Collection목록을 확인할 수 있다.
+
+db.C_NAME.drop()
+기존 컬렉션을 제거한다.
+
+db.collection.insertOne()
+db.collection.insertMany()
+db.collection.insert()
+
+> db.Students.insert([{"name":"han",  "age":26}, {"name":"Kim", "age":26}]) 
+ BulkWriteResult({
+ 	"writeErrors" : [ ],
+ 	"writeConcernErrors" : [ ],
+ 	"nInserted" : 2,
+ 	"nUpserted" : 0,
+ 	"nMatched" : 0,
+ 	"nModified" : 0,
+ 	"nRemoved" : 0,
+ 	"upserted" : [ ]
+ })
+ 
+db.inventory.insertMany( [
+   { item: "canvas", qty: 100, size: { h: 28, w: 35.5, uom: "cm" }, status: "A" },
+   { item: "journal", qty: 25, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "mat", qty: 85, size: { h: 27.9, w: 35.5, uom: "cm" }, status: "A" },
+   { item: "mousepad", qty: 25, size: { h: 19, w: 22.85, uom: "cm" }, status: "P" },
+   { item: "notebook", qty: 50, size: { h: 8.5, w: 11, uom: "in" }, status: "P" },
+   { item: "paper", qty: 100, size: { h: 8.5, w: 11, uom: "in" }, status: "D" },
+   { item: "planner", qty: 75, size: { h: 22.85, w: 30, uom: "cm" }, status: "D" },
+   { item: "postcard", qty: 45, size: { h: 10, w: 15.25, uom: "cm" }, status: "A" },
+   { item: "sketchbook", qty: 80, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "sketch pad", qty: 95, size: { h: 22.85, w: 30.5, uom: "cm" }, status: "A" }
+ ]);
+  
+db.collection.find()
+모두 출력한다.
+> db.Buildings.find()
+{ "_id" : ObjectId("59a79eb76e01d3e60d24a3a5"), "name" : "63Building" }
+{ "_id" : ObjectId("59a7b9dfcde2cac42d57c60e") }
+{ "_id" : ObjectId("59a7b9dfcde2cac42d57c60f"), "name" : "Happy Building", "Height" : 135 }
+{ "_id" : ObjectId("59a7b9dfcde2cac42d57c610"), "name" : "Greddy Building" }
+> db.inventory.find({status:"P"})
+Embeded doc에 대한 쿼리는 **. 연산자를 이용하면 된다.
+> db.inventory.find({"size.h":28})
+{ "_id" : ObjectId("59a8029acf8614e7881b4766"), "item" : "canvas", "qty" : 100, "size" : { "h" : 28, "w" : 35.5, "uom" : "cm" }, "status" : "A" }
+
+db.collection.deleteOne()
+db.collection.deleteMany()
+> db.inventory.deleteMany({status:"A"})
+{ "acknowledged" : true, "deletedCount" : 6 }
+
+Query문 사용하기
+값 비교 옵션들
+$eq(equals) : 주어진 값과 일치하는 값
+$gt(greater than) : 주어진 값보다 큰 값
+$gte(greater than or equals) : 주어진 값보다 크거나 같은 값
+$lt(less than) : 주어진 값보다 작은 값
+$lte(less than or equals) : 주어진 값보다 작거나 같은 값
+$ne(not equals) : 주어진 값과 일치하지 않는 값
+$in : 주어진 배열 안에 속하는 값
+$nin : 주어진 배열 안에 속하지 않는 값
+  
+> db.inventory.find({qty: {$gt:40, $lt:60}})
+{ "_id" : ObjectId("59a8029acf8614e7881b476a"), "item" : "notebook", "qty" : 50, "size" : { "h" : 8.5, "w" : 11, "uom" : "in" }, "status" : "P" }
+{ "_id" : ObjectId("59a8029acf8614e7881b476d"), "item" : "postcard", "qty" : 45, "size" : { "h" : 10, "w" : 15.25, "uom" : "cm" }, "status" : "A" }
+ 
+> db.inventory.find({item:{$in:["canvas", "mat", "father"]}})
+{ "_id" : ObjectId("59a8029acf8614e7881b4766"), "item" : "canvas", "qty" : 100, "size" : { "h" : 28, "w" : 35.5, "uom" : "cm" }, "status" : "A" }
+{ "_id" : ObjectId("59a8029acf8614e7881b4768"), "item" : "mat", "qty" : 85, "size" : { "h" : 27.9, "w" : 35.5, "uom" : "cm" }, "status" : "A" }
+
+논리연산자 옵션
+예시
+{$or: [{ __CONDITION1__ }, { __CONDITION2__ }]}
+ > db.inventory.find({$or: [{item:"canvas"}, {qty:{$lt:55}}]})
+  { "_id" : ObjectId("59a8029acf8614e7881b4766"), "item" : "canvas", "qty" : 100, "size" : { "h" : 28, "w" : 35.5, "uom" : "cm" }, "status" : "A" }
+  { "_id" : ObjectId("59a8029acf8614e7881b4767"), "item" : "journal", "qty" : 25, "size" : { "h" : 14, "w" : 21, "uom" : "cm" }, "status" : "A" }
+  { "_id" : ObjectId("59a8029acf8614e7881b4769"), "item" : "mousepad", "qty" : 25, "size" : { "h" : 19, "w" : 22.85, "uom" : "cm" }, "status" : "P" }
+  { "_id" : ObjectId("59a8029acf8614e7881b476a"), "item" : "notebook", "qty" : 50, "size" : { "h" : 8.5, "w" : 11, "uom" : "in" }, "status" : "P" }
+  { "_id" : ObjectId("59a8029acf8614e7881b476d"), "item" : "postcard", "qty" : 45, "size" : { "h" : 10, "w" : 15.25, "uom" : "cm" }, "status" : "A" }
+  
+Projection Option
+조회 결과에서 선택적으로 element만 나타낼 수 있다.
+find({}, {__PROJECTIONS__, , ... })
+> db.inventory.find({}, {"item":true, "qty":true, _id:false})
+{ "item" : "canvas", "qty" : 100 }
+{ "item" : "journal", "qty" : 25 }
+{ "item" : "mat", "qty" : 85 }
+{ "item" : "mousepad", "qty" : 25 }
+{ "item" : "notebook", "qty" : 50 }
+
+.sort()메서드를 이용하면 정렬이 가능하다. 오름차순은 1, 내림차순은 -1
+> db.inventory.find({},{status:true, qty:true, _id:false}).'''sort({"status":1, qty:-1})'''
+{ "qty" : 100, "status" : "A" }
+{ "qty" : 95, "status" : "A" }
+{ "qty" : 85, "status" : "A" }
+{ "qty" : 80, "status" : "A" }
+{ "qty" : 45, "status" : "A" }
+{ "qty" : 25, "status" : "A" }
+{ "qty" : 100, "status" : "D" }
+{ "qty" : 75, "status" : "D" }
+{ "qty" : 50, "status" : "P" }
+{ "qty" : 25, "status" : "P" }
+
+데이터의 개수를 제한할 때 .limit(n) 메서드를 사용한다.
+> db.inventory.find().limit(3)
+{ "_id" : ObjectId("59a8029acf8614e7881b4766"), "item" : "canvas", "qty" : 100, "size" : { "h" : 28, "w" : 35.5, "uom" : "cm" }, "status" : "A" }
+{ "_id" : ObjectId("59a8029acf8614e7881b4767"), "item" : "journal", "qty" : 25, "size" : { "h" : 14, "w" : 21, "uom" : "cm" }, "status" : "A" }
+{ "_id" : ObjectId("59a8029acf8614e7881b4768"), "item" : "mat", "qty" : 85, "size" : { "h" : 27.9, "w" : 35.5, "uom" : "cm" }, "status" : "A" }
+
+.skip(n)을 사용하면 처음 n개의 doc을 생략한다.
+db.inventory.find().skip(3)
+
+업데이트
+두 가지 메서드가 존재한다.
+updateOne()
+updateMany()
+> db.inventory.update({"status":"A"}, {name:"Kim mijeong"})
+  WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+  '''그 결과 아래와 같이 Dco이 name key 만 가지도록 바꼈습니다.  '''
+  > db.inventory.find()
+  { "_id" : ObjectId("59a8029acf8614e7881b4766"), "name" : "Kim mijeong" }
+>db.inventory.update({item:"canvas"}, {$set:{qty:99}})
+>db.inventory.update({item:"canvas"}, {$inc:{qty:1}})
+
+s
